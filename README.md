@@ -3,13 +3,13 @@
 **Official Repository of Our Paper: “A Three-stage Vision-Language Task Planning Framework with Spatial Prompts and Feedback Simulation
 ”**
 
-📄 [Paper (Manuscript)](./VLP基本框架4.docx) | 🔗 [Project Page](https://github.com/trtp/TRTP_1)
-
+📄 [Paper (coming soon)]() | 🔗 [Project Page](https://trtp.github.io/)
+📌 Note: Paper link will be shared publicly after acceptance.
 ---
 
 ## 🧩 Overview
 
-**TRTP** introduces a **two-stage framework** for robust robot task planning. It integrates:
+**TRTP** introduces a **three-stage framework** for robust robot task planning. It integrates:
 1. ✴️ **Spatial prompt modeling** using VLMs (e.g., Qwen-VL, InternVL);
 2. 🧠 **Digital twin simulation with error feedback**, enabling iterative correction;
 3. ⚙️ **Closed-loop planning pipeline** grounded in visual, spatial, and physical consistency.
@@ -105,7 +105,6 @@ We evaluate TRTP on:
 - 3 baseline LMPs: SayCan, ProgPrompt, InnerMonologue
 - Metrics: task success rate, spatial consistency, physical feasibility
 
-Full results in [`VLP基本框架4.docx`](./VLP基本框架4.docx)
 
 ---
 
@@ -129,10 +128,10 @@ Structured Error Prompt (example):
 
 ```bibtex
 @article{TRTP2025,
-  title={Two-Stage Robust Task Planning via Structured Spatial Prompts and Digital-Twin Feedback},
-  author={Your Name and Co-authors},
-  journal={TBD},
-  year={2025}
+  title={A Three-stage Vision-Language Task Planning Framework with Spatial Prompts and Feedback Simulation},
+  author={},
+  journal={},
+  year={}
 }
 ```
 
@@ -155,4 +154,3 @@ This repository is licensed under the **MIT License**.
 
 ---
 
-📫 For questions or contributions: [your_email@domain.com]
