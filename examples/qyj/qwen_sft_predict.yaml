@@ -1,0 +1,14 @@
+# model
+model_name_or_path: E:/code/Qwen2-0.5B_sft_merge
+adapter_name_or_path: E:/code/Qwen2-0.5B_ppo_1_batch
+
+stage: sft
+finetuning_type: lora
+#lora_target: all
+#quantization_bit: 8
+
+#infer_backend: vllm
+
+# dataset
+template: qwen
+#cutoff_len: 1024

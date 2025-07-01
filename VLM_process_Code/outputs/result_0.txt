@@ -1,0 +1,7 @@
+<|begin_of_text|><|begin_of_text|><|start_header_id|>user<|end_header_id|>
+
+<|image|>This is the updated haiku text for batch processing.<|eot_id|><|start_header_id|>assistant<|end_header_id|>
+
+Robots work tirelessly,
+Batch processing with precision and speed,
+Efficiency at its best.<|eot_id|>

@@ -1,0 +1,84 @@
+import os
+import time
+import torch
+from PIL import Image
+from transformers import AutoProcessor, LlavaOnevisionForConditionalGeneration
+
+# 清空 CUDA 缓存
+torch.cuda.empty_cache()
+
+# 加载模型
+model_id = "/media/ubuntu/10B4A468B4A451D0/models/llava-onevision-qwen2-7b-ov-hf"
+model = LlavaOnevisionForConditionalGeneration.from_pretrained(
+    model_id,
+    torch_dtype=torch.float16,
+    low_cpu_mem_usage=True,
+).to(0)
+
+processor = AutoProcessor.from_pretrained(model_id)
+
+def process_single_image(image_path, message_text):
+    """
+    处理单张图片并进行推理
+    :param image_path: 图片文件路径
+    :param message_text: 需要输入给模型的文本
+    :return: 生成的文本
+    """
+    raw_image = Image.open(image_path).convert("RGB")  # 确保是 RGB 格式
+    conversation = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": message_text},
+                {"type": "image"},
+            ],
+        },
+    ]
+
+    # 处理输入
+    prompt = processor.apply_chat_template(conversation, add_generation_prompt=True)
+    inputs = processor(images=raw_image, text=prompt, return_tensors='pt').to(0, torch.float16)
+
+    # 进行推理
+    with torch.no_grad():
+        output = model.generate(**inputs, max_new_tokens=200, do_sample=False)
+        output_text = processor.decode(output[0][2:], skip_special_tokens=True)
+
+    return output_text
+
+def batch_process_images(image_folder, output_folder, message_text):
+    """
+    批量处理文件夹中的所有图片
+    :param image_folder: 源图片文件夹
+    :param output_folder: 结果保存文件夹
+    :param message_text: 需要输入给模型的文本
+    """
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
+    image_files = [f for f in os.listdir(image_folder) if f.lower().endswith(('.jpg', '.png', '.jpeg'))]
+
+    for idx, image_file in enumerate(image_files, 1):
+        image_path = os.path.join(image_folder, image_file)
+        print(f"处理图片: {image_path} ({idx}/{len(image_files)})")
+
+        # 推理单张图片
+        output_text = process_single_image(image_path, message_text)
+
+        # 保存结果
+        result_file = os.path.join(output_folder, f"{os.path.splitext(image_file)[0]}.txt")
+        with open(result_file, 'w', encoding='utf-8') as f:
+            f.write(output_text)
+
+        print(f"结果已保存到: {result_file}")
+
+# 示例用法
+image_folder = "/home/ubuntu/Desktop/dataset/droidCutImage_randomGet"  # 图片目录
+output_folder = "/home/ubuntu/Desktop/dataset/droidCutImagePrompt/llava-onevision-qwen2-7b-ov-hf"  # 结果保存目录
+message_text = "描述场景内物体的空间关系。"  # 提供给模型的提示词
+
+start_time = time.time()
+batch_process_images(image_folder, output_folder, message_text)
+end_time = time.time()
+
+print(f"批量处理耗时: {end_time - start_time:.2f} 秒")

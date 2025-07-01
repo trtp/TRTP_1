@@ -1,0 +1,5 @@
+cache_dir: null
+lang: zh
+last_model: Qwen2VL-2B-Chat
+path_dict:
+  Qwen2VL-2B-Chat: E:/code/qwen2-vl-2b-instruct

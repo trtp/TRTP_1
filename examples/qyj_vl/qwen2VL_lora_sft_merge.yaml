@@ -1,0 +1,16 @@
+# Note: DO NOT use quantized model or quantization_bit when merging lora adapters
+
+# model
+model_name_or_path: E:/code/qwen2-vl-2b-instruct
+adapter_name_or_path: E:/code/qwen2-vl-2b-instruct_sft
+#model_name_or_path: /media/xk/D6B8A862B8A8433B/data/qwen2_05b
+#adapter_name_or_path: /media/xk/D6B8A862B8A8433B/data/qwen2_15b_rw
+template: qwen2_vl
+finetuning_type: lora
+
+# export
+export_dir: E:/code/qwen2-vl-2b-instruct_sft_merge
+export_size: 2
+export_device: cpu
+# true,save as safetensors format
+export_legacy_format: false

@@ -1,0 +1,30 @@
+### model
+model_name_or_path: E:/code/Qwen2-0.5B_sft_merge
+reward_model: E:/code/Qwen2-0.5B_rm
+
+### method
+stage: ppo
+do_train: true
+finetuning_type: lora
+lora_target: all
+
+### dataset
+# dataset: identity,alpaca_en_demo
+dataset: train
+dataset_dir: E:/code/DataSets/qwentest
+template: qwen
+cutoff_len: 1024
+max_samples: 2000
+overwrite_cache: true
+preprocessing_num_workers: 1
+
+### output
+output_dir: E:/code/Qwen2-0.5B_ppo_1_batch
+logging_steps: 10
+save_steps: 100
+plot_loss: true
+overwrite_output_dir: true
+
+### train
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 8
