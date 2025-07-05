@@ -7,7 +7,7 @@ from PIL import Image
 from torchvision.transforms.functional import InterpolationMode
 from modelscope import AutoModel, AutoTokenizer
 
-# 数据集路径
+# Dataset paths (multiple lines are preserved as in the original)
 DATASET_PATH = "/home/ubuntu/Desktop/dataset/droidJsonDatset/InternVL2-8B-prompt-output_dataset.json"
 #DATASET_PATH = "/home/ubuntu/Desktop/dataset/droidJsonDatset/InternVL2_5-8B-prompt-output_dataset.json"
 DATASET_PATH = "/home/ubuntu/Desktop/dataset/droidJsonDatset/InternVL2-8B-prompt-output_dataset.json"
@@ -41,51 +41,55 @@ def build_transform(input_size):
 
 
 def load_video_frame(video_path, frame_idx=10):
-    """读取视频的第10帧"""
+    """Loads a specific frame from a video (e.g., the 10th frame)."""
     vr = VideoReader(video_path, ctx=cpu(0))
     total_frames = len(vr)
-    frame_idx = min(frame_idx, total_frames - 1)  # 防止索引超出范围
+    frame_idx = min(frame_idx, total_frames - 1)  # Prevent index from going out of bounds
     frame = vr[frame_idx].asnumpy()
     return Image.fromarray(frame)
 
 
 def load_image(image, input_size=448):
-    """预处理图片，转换为模型输入格式"""
+    """Preprocesses an image and converts it to the model's input format."""
     transform = build_transform(input_size=input_size)
-    return transform(image).unsqueeze(0)  # 添加 batch 维度
+    return transform(image).unsqueeze(0)  # Add batch dimension
 
 
 def evaluate_spatial_relationship(video_path, system_description, model, tokenizer):
-    """评估图片和 system 描述的空间关系匹配度"""
-    # 读取第 10 帧
+    """Evaluates the spatial relationship match between an image and a system description."""
+    # Load the 10th frame
     image = load_video_frame(video_path, frame_idx=10)
 
-    # 预处理图片
+    # Preprocess the image
     pixel_values = load_image(image).to(torch.bfloat16).cuda()
 
-    # 生成输入 prompt
-    question = f"<image>\n{system_description}\n根据该图片与输入描述在空间关系上的精确度、完整性和冗余度，并给出评分（0-1）.请严格按照以下格式返回评分：Precision: <数值> Completeness: <数值> Redundancy: <数值>"
+    # Generate the input prompt
+    question = (f"<image>\n{system_description}\nBased on the image and the input description, evaluate the spatial "
+                f"relationship in terms of precision, completeness, and redundancy, and provide a score (0-1 for each). "
+                f"Please strictly return the scores in the following format: "
+                f"Precision: <value> Completeness: <value> Redundancy: <value>")
 
-    # 推理
+    # Inference
     generation_config = dict(max_new_tokens=1024, do_sample=True)
     response = model.chat(tokenizer, pixel_values, question, generation_config)
 
-    # 解析模型输出
-    print(f"模型返回结果: {response}")
+    # Parse the model's output
+    print(f"Model response: {response}")
 
-    # 解析结果中的 Precision, Completeness, Redundancy 评分
+    # Parse the Precision, Completeness, and Redundancy scores from the result
     scores = {"Precision": None, "Completeness": None, "Redundancy": None}
     for key in scores.keys():
         try:
-            score = float(response.split(key + ":")[1].split()[0])
-            scores[key] = round(score, 3)  # 保留 3 位小数
-        except Exception as e:
-            scores[key] = None  # 解析失败时设为 None
+            score_str = response.split(key + ":")[1].split()[0]
+            score = float(score_str)
+            scores[key] = round(score, 3)  # Round to 3 decimal places
+        except (IndexError, ValueError) as e:
+            scores[key] = None  # Set to None if parsing fails
 
     return scores
 
 
-# 加载视觉语言模型
+# Load the Vision-Language Model
 path = "/media/ubuntu/10B4A468B4A451D0/models/InternVL2-8B"
 model = AutoModel.from_pretrained(
     path,
@@ -95,19 +99,19 @@ model = AutoModel.from_pretrained(
     trust_remote_code=True).eval().cuda()
 tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True, use_fast=False)
 
-# 读取数据集
+# Load the dataset
 with open(DATASET_PATH, "r") as f:
     dataset = json.load(f)
 
-# 遍历数据集进行评估
+# Iterate through the dataset for evaluation
 for idx, sample in enumerate(dataset):
     system_text = sample["conversations"][0]["value"]
     video_path = sample["videos"][0]
 
-    print(f"评估 {idx + 1}/{len(dataset)}，视频: {video_path}")
+    print(f"Evaluating {idx + 1}/{len(dataset)}, video: {video_path}")
     scores = evaluate_spatial_relationship(video_path, system_text, model, tokenizer)
 
-    # 构建当前样本的结果
+    # Build the result for the current sample
     current_result = {
         "video": video_path,
         "Precision": scores["Precision"],
@@ -115,23 +119,26 @@ for idx, sample in enumerate(dataset):
         "Redundancy": scores["Redundancy"]
     }
 
-    # 如果结果文件存在，则加载已有结果，否则初始化
+    # If the results file exists, load existing results; otherwise, initialize.
     if os.path.exists(RESULTS_PATH):
-        with open(RESULTS_PATH, "r") as f:
-            output_data = json.load(f)
-        individual_results = output_data.get("individual_results", [])
+        try:
+            with open(RESULTS_PATH, "r") as f:
+                output_data = json.load(f)
+            individual_results = output_data.get("individual_results", [])
+        except json.JSONDecodeError:
+            individual_results = [] # Handle empty or corrupt file
     else:
         individual_results = []
 
-    # 将当前结果添加到结果列表中
+    # Add the current result to the results list
     individual_results.append(current_result)
 
-    # 根据 individual_results 重新计算平均值
+    # Recalculate the averages based on all individual_results
     total_scores = {"Precision": 0.0, "Completeness": 0.0, "Redundancy": 0.0}
     valid_count = {"Precision": 0, "Completeness": 0, "Redundancy": 0}
     for res in individual_results:
         for key in total_scores.keys():
-            if isinstance(res[key], (int, float)):
+            if isinstance(res.get(key), (int, float)):
                 total_scores[key] += res[key]
                 valid_count[key] += 1
 
@@ -142,14 +149,14 @@ for idx, sample in enumerate(dataset):
         else:
             average_scores[key] = "N/A"
 
-    # 构造要保存的字典
+    # Construct the dictionary to be saved
     output_data = {
         "individual_results": individual_results,
         "average_scores": average_scores
     }
 
-    # 写回文件，覆盖原文件（这样每次都会保存最新的所有结果）
+    # Write back to the file, overwriting it (this saves all results each time)
     with open(RESULTS_PATH, "w") as f:
         json.dump(output_data, f, indent=4)
 
-    print(f"当前评估结果已保存到: {RESULTS_PATH}\n")
+    print(f"Current evaluation results have been saved to: {RESULTS_PATH}\n")

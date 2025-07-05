@@ -21,11 +21,11 @@ image1 = Image.open('/home/ubuntu/Desktop/dataset/droidCutImage_randomGet/video_
 # process the image and text
 # inputs = processor.process(
 #     images=[image1],
-#     text="描述场景内物体的空间关系."
+#     text="Describe the objects and their spatial relationships within the scene."
 # )
 inputs = processor.process(
     images=[image1],
-    text="请根据提供的图片，描述物体之间的空间关系，例如“物体A在物体B的左侧”或“物体C在物体D的上方”。"
+    text="Please describe the spatial relationship between objects based on the provided images, such as 'Object A is to the left of Object B' or 'Object C is above Object D."
 )
 
 

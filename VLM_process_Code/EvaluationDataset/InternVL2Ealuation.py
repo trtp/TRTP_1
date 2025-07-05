@@ -10,46 +10,38 @@ from torchvision.transforms.functional import InterpolationMode
 
 model_path = "/media/ubuntu/10B4A468B4A451D0/models/InternVL2_5-8B"
 
-
-
 dataset_save_pairs = [
-
-    ("/home/ubuntu/Desktop/dataset/droidJsonDatsetTest/output/InternVL2-8B_infer_llava-onevision-qwen2-7b-ov-hf-prompt_qwen2vlsft.json",
-     "/home/ubuntu/Desktop/dataset/droidJsonDatsetTest/output/InternEvaluation/InternVL2-8B_infer_llava-onevision-qwen2-7b-ov-hf-prompt_qwen2vlsft.json"),
-
-    ("/home/ubuntu/Desktop/dataset/droidJsonDatsetTest/output/InternVL2-8B_infer_Ovis1.6-Gemma2-9B_prompt_qwen2vlsft.json",
-     "/home/ubuntu/Desktop/dataset/droidJsonDatsetTest/output/InternEvaluation/InternVL2-8B_infer_Ovis1.6-Gemma2-9B_prompt_qwen2vlsft.json"),
-
+    # (Paths are left as they are, as they are specific to your system)
+    (
+    "/home/ubuntu/Desktop/dataset/droidJsonDatsetTest/output/InternVL2-8B_infer_llava-onevision-qwen2-7b-ov-hf-prompt_qwen2vlsft.json",
+    "/home/ubuntu/Desktop/dataset/droidJsonDatsetTest/output/InternEvaluation/InternVL2-8B_infer_llava-onevision-qwen2-7b-ov-hf-prompt_qwen2vlsft.json"),
+    (
+    "/home/ubuntu/Desktop/dataset/droidJsonDatsetTest/output/InternVL2-8B_infer_Ovis1.6-Gemma2-9B_prompt_qwen2vlsft.json",
+    "/home/ubuntu/Desktop/dataset/droidJsonDatsetTest/output/InternEvaluation/InternVL2-8B_infer_Ovis1.6-Gemma2-9B_prompt_qwen2vlsft.json"),
     ("/home/ubuntu/Desktop/dataset/droidJsonDatsetTest/output/InternVL2-8B_infer_qwen2vlsft.json",
      "/home/ubuntu/Desktop/dataset/droidJsonDatsetTest/output/InternEvaluation/InternVL2-8B_infer_qwen2vlsft.json"),
-
     ("/home/ubuntu/Desktop/dataset/droidJsonDatsetTest/output/InternVL2-8B_infer_Qwen2VL7B_prompt_qwen2vlsft.json",
      "/home/ubuntu/Desktop/dataset/droidJsonDatsetTest/output/InternEvaluation/InternVL2-8B_infer_Qwen2VL7B_prompt_qwen2vlsft.json"),
-
     ("/home/ubuntu/Desktop/dataset/droidJsonDatsetTest/output/InternVL2_5-8B_infer_InternVL2-8B-prompt_qwen2vlsft.json",
      "/home/ubuntu/Desktop/dataset/droidJsonDatsetTest/output/InternEvaluation/InternVL2_5-8B_infer_InternVL2-8B-prompt_qwen2vlsft.json"),
-
     ("/home/ubuntu/Desktop/dataset/droidJsonDatsetTest/output/InternVL2_5-8B_infer_qwen2vlsft.json",
      "/home/ubuntu/Desktop/dataset/droidJsonDatsetTest/output/InternEvaluation/InternVL2_5-8B_infer_qwen2vlsft.json"),
-
-    ("/home/ubuntu/Desktop/dataset/droidJsonDatsetTest/output/MiniCPM-V-2_6_infer_InternVL2_5-8B-prompt_qwen2vlsft.json",
-     "/home/ubuntu/Desktop/dataset/droidJsonDatsetTest/output/InternEvaluation/MiniCPM-V-2_6_infer_InternVL2_5-8B-prompt_qwen2vlsft.json"),
-
-    ("/home/ubuntu/Desktop/dataset/droidJsonDatsetTest/output/MiniCPM-V-2_6_infer_Llama-3.2-11B-_prompt_qwen2vlsft.json",
-     "/home/ubuntu/Desktop/dataset/droidJsonDatsetTest/output/InternEvaluation/MiniCPM-V-2_6_infer_Llama-3.2-11B-_prompt_qwen2vlsft.json"),
-
+    (
+    "/home/ubuntu/Desktop/dataset/droidJsonDatsetTest/output/MiniCPM-V-2_6_infer_InternVL2_5-8B-prompt_qwen2vlsft.json",
+    "/home/ubuntu/Desktop/dataset/droidJsonDatsetTest/output/InternEvaluation/MiniCPM-V-2_6_infer_InternVL2_5-8B-prompt_qwen2vlsft.json"),
+    (
+    "/home/ubuntu/Desktop/dataset/droidJsonDatsetTest/output/MiniCPM-V-2_6_infer_Llama-3.2-11B-_prompt_qwen2vlsft.json",
+    "/home/ubuntu/Desktop/dataset/droidJsonDatsetTest/output/InternEvaluation/MiniCPM-V-2_6_infer_Llama-3.2-11B-_prompt_qwen2vlsft.json"),
     ("/home/ubuntu/Desktop/dataset/droidJsonDatsetTest/output/MiniCPM-V-2_6_infer_qwen2vlsft.json",
      "/home/ubuntu/Desktop/dataset/droidJsonDatsetTest/output/InternEvaluation/MiniCPM-V-2_6_infer_qwen2vlsft.json"),
-
     ("/home/ubuntu/Desktop/dataset/droidJsonDatsetTest/output/Qwen2-VL-7B-Instruct_qwen2vlsft.json",
      "/home/ubuntu/Desktop/dataset/droidJsonDatsetTest/output/InternEvaluation/Qwen2-VL-7B-Instruct_qwen2vlsft.json"),
-
 ]
 
-# 设备设置
+# Device setup
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# 加载模型
+# Load model
 model = AutoModel.from_pretrained(
     model_path,
     torch_dtype=torch.bfloat16,
@@ -59,10 +51,10 @@ model = AutoModel.from_pretrained(
 ).eval().to(device)
 tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True, use_fast=False)
 
-# 评分权重（视觉、时序、物理）
+# Scoring weights (visual, temporal, physical)
 alpha, beta, gamma = 0.4, 0.3, 0.3
 
-# 预处理参数
+# Preprocessing parameters
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_STD = (0.229, 0.224, 0.225)
 
@@ -77,7 +69,7 @@ def build_transform(input_size=448):
 
 
 def get_index(bound, fps, max_frame, first_idx=0, num_segments=8):
-    """获取关键帧索引"""
+    """Get keyframe indices"""
     start, end = bound if bound else (-100000, 100000)
     start_idx = max(first_idx, round(start * fps))
     end_idx = min(round(end * fps), max_frame)
@@ -86,7 +78,7 @@ def get_index(bound, fps, max_frame, first_idx=0, num_segments=8):
 
 
 def load_video(video_path, num_segments=8, input_size=448):
-    """读取视频并进行预处理"""
+    """Read video and preprocess it"""
     vr = VideoReader(video_path, ctx=cpu(0), num_threads=1)
     max_frame, fps = len(vr) - 1, float(vr.get_avg_fps())
     transform = build_transform(input_size)
@@ -100,21 +92,27 @@ def load_video(video_path, num_segments=8, input_size=448):
         pixel_values_list.append(img)
 
     pixel_values = torch.stack(pixel_values_list).to(torch.bfloat16).to(device)
-    return pixel_values, num_segments  # 这里 num_segments 代表帧的数量
+    return pixel_values, num_segments  # Here num_segments represents the number of frames
 
 
 def evaluate_with_model(video_path, gpt_value):
-    """使用 InternVL2-8B 评估视频和 GPT 生成的任务规划"""
+    """Evaluate the video and the task plan generated by GPT using InternVL2.5-8B"""
     pixel_values, num_patches = load_video(video_path)
 
     video_prefix = ''.join([f'Frame{i + 1}: <image>\n' for i in range(num_patches)])
     question = (
-            f"{video_prefix} 根据视频内容，评估以下任务描述是否符合视觉一致性、时序一致性和物理可行性要求（0-100）。视觉一致性确保任务目标出现在场景视频中，并评估其可达性。时序一致性确保任务序列的步骤没有前后依赖冲突问题。物理可行性需要检查任务是否符合物理约束，例如物体是否可移动，目标位置是否允许放置"
-            "请严格按照以下格式返回评分： 视觉一致性: <数值>  时序一致性: <数值>  物理可行性: <数值> ："
+            f"{video_prefix}Based on the video content, evaluate whether the following task description meets the "
+            "requirements for visual consistency, temporal consistency, and physical feasibility (on a scale of 0-100). "
+            "Visual consistency ensures that the task's target objects appear in the scene video and evaluates their reachability. "
+            "Temporal consistency ensures that there are no dependency conflicts in the sequence of task steps. "
+            "Physical feasibility involves checking if the task adheres to physical constraints, such as whether objects "
+            "are movable and if the target locations are valid for placement. "
+            "Please strictly return the scores in the following format: "
+            "Visual consistency: <score>  Temporal consistency: <score>  Physical feasibility: <score> : "
             + gpt_value
     )
 
-    # 模型推理，假设返回的是一个文本字符串
+    # Model inference, assuming it returns a text string
     outputs = model.chat(
         tokenizer,
         pixel_values,
@@ -129,26 +127,23 @@ def evaluate_with_model(video_path, gpt_value):
 
 def parse_scores(output_text):
     """
-    解析模型返回的文本，提取视觉、时序和物理的评分
-    假设返回格式为：
-    "视觉一致性: 90 时序一致性: 85 物理可行性: 80"
+    Parse the text returned by the model to extract visual, temporal, and physical scores.
+    Assumes the returned format is:
+    "Visual consistency: 90  Temporal consistency: 85  Physical feasibility: 80"
     """
     try:
-        s_vision = int(re.search(r"视觉一致性:\s*(\d+)", output_text).group(1))
-        s_temporal = int(re.search(r"时序一致性:\s*(\d+)", output_text).group(1))
-        s_physical = int(re.search(r"物理可行性:\s*(\d+)", output_text).group(1))
+        s_vision = int(re.search(r"Visual consistency:\s*(\d+)", output_text, re.IGNORECASE).group(1))
+        s_temporal = int(re.search(r"Temporal consistency:\s*(\d+)", output_text, re.IGNORECASE).group(1))
+        s_physical = int(re.search(r"Physical feasibility:\s*(\d+)", output_text, re.IGNORECASE).group(1))
     except Exception as e:
-        print("解析评分出错：", e)
+        print("Error parsing scores:", e)
         s_vision, s_temporal, s_physical = None, None, None
     return s_vision, s_temporal, s_physical
 
 
-import json
-import numpy as np
-
 def evaluate_dataset(dataset_path, save_path):
-    """处理单个数据集"""
-    # 读取数据集
+    """Process a single dataset"""
+    # Load the dataset
     with open(dataset_path, "r", encoding="utf-8") as f:
         dataset = json.load(f)
 
@@ -157,9 +152,9 @@ def evaluate_dataset(dataset_path, save_path):
 
     for sample in dataset:
         video_path = sample["videos"][0]
-        gpt_value = sample["conversations"][-1]["value"]  # GPT 生成的任务规划
+        gpt_value = sample["conversations"][-1]["value"]  # Task plan generated by GPT
 
-        # 跳过 gpt_value 为 "default" 的样本
+        # Skip samples where gpt_value is "default"
         if gpt_value == "default":
             results.append({
                 "video": video_path,
@@ -172,11 +167,11 @@ def evaluate_dataset(dataset_path, save_path):
             })
             continue
 
-        # 调用评估模型
+        # Call the evaluation model
         output_text = evaluate_with_model(video_path, gpt_value)
-        print(f"模型输出 ({dataset_path}):", output_text)
+        print(f"Model output ({dataset_path}):", output_text)
 
-        # 解析评分
+        # Parse scores
         s_vision, s_temporal, s_physical = parse_scores(output_text)
 
         if s_vision is None or s_temporal is None or s_physical is None:
@@ -188,7 +183,7 @@ def evaluate_dataset(dataset_path, save_path):
             physical_scores.append(s_physical)
             final_scores.append(final_score)
 
-        # 保存当前样本的评估结果
+        # Save the evaluation results for the current sample
         results.append({
             "video": video_path,
             "gpt_value": gpt_value,
@@ -199,13 +194,13 @@ def evaluate_dataset(dataset_path, save_path):
             "final_score": final_score
         })
 
-    # ✅ 仅使用有效评分样本计算均值
+    #  Calculate the mean using only valid scored samples
     mean_vision = np.mean(vision_scores) if vision_scores else None
     mean_temporal = np.mean(temporal_scores) if temporal_scores else None
     mean_physical = np.mean(physical_scores) if physical_scores else None
     mean_final = np.mean(final_scores) if final_scores else None
 
-    # 插入均值数据到结果文件顶部
+    # Insert the summary statistics at the top of the results file
     summary = {
         "mean_S_vision": mean_vision,
         "mean_S_temporal": mean_temporal,
@@ -215,12 +210,13 @@ def evaluate_dataset(dataset_path, save_path):
 
     final_results = [summary] + results
 
-    # 保存评估结果到 JSON 文件
+    # Save the evaluation results to a JSON file
     with open(save_path, "w", encoding="utf-8") as f:
         json.dump(final_results, f, indent=4, ensure_ascii=False)
 
-    print(f"评估完成，结果已保存至 {save_path}")
+    print(f"Evaluation complete. Results saved to {save_path}")
 
-# 依次处理所有数据集
+
+# Process all datasets sequentially
 for dataset_path, save_path in dataset_save_pairs:
     evaluate_dataset(dataset_path, save_path)

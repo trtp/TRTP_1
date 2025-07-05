@@ -4,35 +4,38 @@ from PIL import Image
 from modelscope import AutoModel, AutoTokenizer
 from decord import VideoReader, cpu  # pip install decord
 
-# 参数设置
-dataset_path = "/home/ubuntu/Desktop/dataset/droidJsonDatset/qwenvl_2b_qwenvl_2b_updated_dataset.json"  # 数据集文件路径
-save_path = "/home/ubuntu/Desktop/dataset/droidJsonDatset/qwenvl_2b_qwenvl_2b_updated_dataset_EvaluationResult.json"  # 结果保存路径
+# Parameter settings
+dataset_path = "/home/ubuntu/Desktop/dataset/droidJsonDatset/qwenvl_2b_qwenvl_2b_updated_dataset.json"  # Dataset file path
+save_path = "/home/ubuntu/Desktop/dataset/droidJsonDatset/qwenvl_2b_qwenvl_2b_updated_dataset_EvaluationResult.json"  # Path to save results
 model_path = "/media/ubuntu/10B4A468B4A451D0/models/MiniCPM-V-2_6"
 
-# 设备
+# Device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# 加载模型
+# Load model
 model = AutoModel.from_pretrained(model_path, trust_remote_code=True,
                                   attn_implementation='sdpa', torch_dtype=torch.bfloat16).eval().to(device)
 tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
 
-# 评分权重
+# Scoring weights
 alpha, beta, gamma = 0.4, 0.3, 0.3
 
-MAX_NUM_FRAMES = 64  # 取样最大帧数
+MAX_NUM_FRAMES = 64  # Maximum number of frames to sample
 
 
 def encode_video(video_path):
-    """从视频中提取关键帧"""
+    """Extract keyframes from a video."""
 
     def uniform_sample(l, n):
+        """Uniformly samples n elements from a list l."""
+        if len(l) <= n:
+            return l
         gap = len(l) / n
         idxs = [int(i * gap + gap / 2) for i in range(n)]
         return [l[i] for i in idxs]
 
     vr = VideoReader(video_path, ctx=cpu(0))
-    sample_fps = round(vr.get_avg_fps() / 1)  # 取 1 秒 1 帧
+    sample_fps = round(vr.get_avg_fps() / 1)  # Sample 1 frame per second
     frame_idx = [i for i in range(0, len(vr), sample_fps)]
 
     if len(frame_idx) > MAX_NUM_FRAMES:
@@ -41,34 +44,35 @@ def encode_video(video_path):
     frames = vr.get_batch(frame_idx).asnumpy()
     frames = [Image.fromarray(v.astype('uint8')) for v in frames]
 
-    print(f'视频 {video_path} 采样 {len(frames)} 帧')
+    print(f'Video {video_path} sampled {len(frames)} frames')
     return frames
 
 
 def evaluate_with_model(video_path, gpt_value, eval_type):
-    """使用 MiniCPM-V-2_6 评估任务一致性"""
+    """Evaluate task consistency using MiniCPM-V-2.6."""
     frames = encode_video(video_path)
 
-    question = f"请评估任务描述是否符合{eval_type}，并用0-1评分：" + gpt_value
+    # The prompt for the model
+    question = f"Please evaluate if the task description conforms to {eval_type}, and provide a score from 0 to 1: " + gpt_value
     msgs = [{'role': 'user', 'content': frames + [question]}]
 
-    # 设置推理参数
+    # Set inference parameters
     params = {"use_image_id": False, "max_slice_nums": 2}
 
-    # 推理
+    # Inference
     answer = model.chat(image=None, msgs=msgs, tokenizer=tokenizer, **params)
 
-    # 解析得分
+    # Parse the score
     try:
         score = float(answer.strip())
-        score = max(0.0, min(1.0, score))  # 限制在 0-1 之间
-    except ValueError:
-        score = 0.5  # 解析失败默认值
+        score = max(0.0, min(1.0, score))  # Clamp the value between 0 and 1
+    except (ValueError, TypeError):
+        score = 0.5  # Default value on parsing failure
 
     return score
 
 
-# 读取数据集
+# Load the dataset
 with open(dataset_path, "r", encoding="utf-8") as f:
     dataset = json.load(f)
 
@@ -77,11 +81,11 @@ for sample in dataset:
     video_path = sample["videos"][0]
     gpt_value = sample["conversations"][-1]["value"]
 
-    s_vision = evaluate_with_model(video_path, gpt_value, "视觉一致性")
-    s_temporal = evaluate_with_model(video_path, gpt_value, "时序一致性")
-    s_physical = evaluate_with_model(video_path, gpt_value, "物理可行性")
+    s_vision = evaluate_with_model(video_path, gpt_value, "visual consistency")
+    s_temporal = evaluate_with_model(video_path, gpt_value, "temporal consistency")
+    s_physical = evaluate_with_model(video_path, gpt_value, "physical feasibility")
 
-    # 计算最终得分
+    # Calculate the final score
     final_score = alpha * s_vision + beta * s_temporal + gamma * s_physical
 
     results.append({
@@ -93,8 +97,8 @@ for sample in dataset:
         "final_score": final_score
     })
 
-# 保存结果
+# Save results
 with open(save_path, "w", encoding="utf-8") as f:
     json.dump(results, f, indent=4, ensure_ascii=False)
 
-print(f"评估完成，结果已保存至 {save_path}")
+print(f"Evaluation complete. Results have been saved to {save_path}")

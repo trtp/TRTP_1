@@ -38,7 +38,7 @@ msgs = [
 # Set decode params for video
 params={}
 params["use_image_id"] = False
-params["max_slice_nums"] = 2 # 如果cuda OOM且视频分辨率大于448*448 可设为1
+params["max_slice_nums"] = 2
 
 answer = model.chat(
     image=None,

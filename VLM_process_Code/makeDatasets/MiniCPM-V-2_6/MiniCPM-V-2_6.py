@@ -9,7 +9,7 @@ tokenizer = AutoTokenizer.from_pretrained('/media/ubuntu/10B4A468B4A451D0/models
 
 image1 = Image.open('/home/ubuntu/Desktop/dataset/droidCutImage_randomGet/video_2611_frame.jpg').convert('RGB')
 
-question = '描述场景内物体的空间关系.'
+question = 'Describe the objects and their spatial relationships within the scene.'
 
 msgs = [{'role': 'user', 'content': [image1, question]}]
 

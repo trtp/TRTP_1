@@ -1,40 +1,39 @@
-#
 # import os
 # import shutil
 #
 # def extract_and_rename_videos(source_dir, target_dir, extensions):
 #     """
-#     批量提取视频文件并重命名（直接移动）。
+#     Batch extract and rename video files (by moving them directly).
 #
-#     :param source_dir: 要搜索视频文件的源目录。
-#     :param target_dir: 视频文件提取到的目标目录。
-#     :param extensions: 视频文件的扩展名列表（如[".mp4", ".avi"]）。
+#     :param source_dir: The source directory to search for video files.
+#     :param target_dir: The target directory where video files will be moved.
+#     :param extensions: A list of video file extensions (e.g., [".mp4", ".avi"]).
 #     """
 #     if not os.path.exists(target_dir):
 #         os.makedirs(target_dir)
 #
-#     file_counter = 1  # 用于生成唯一文件名
+#     file_counter = 1  # Used to generate unique filenames
 #
-#     # 遍历源目录及其所有子目录
+#     # Traverse the source directory and all its subdirectories
 #     for root, _, files in os.walk(source_dir):
 #         for file in files:
-#             # 检查文件扩展名是否是指定的视频格式
+#             # Check if the file extension is one of the specified video formats
 #             if any(file.lower().endswith(ext) for ext in extensions):
 #                 source_path = os.path.join(root, file)
-#                 # 使用唯一序号重命名文件
+#                 # Rename the file using a unique sequence number
 #                 new_name = f"video_{file_counter}{os.path.splitext(file)[1]}"
 #                 target_path = os.path.join(target_dir, new_name)
 #
-#                 # 移动文件并重命名
+#                 # Move and rename the file
 #                 shutil.move(source_path, target_path)
-#                 print(f"提取并移动: {source_path} -> {target_path}")
+#                 print(f"Extracted and moved: {source_path} -> {target_path}")
 #
 #                 file_counter += 1
 #
-# # 使用示例
-# source_directory = "/home/ubuntu/Desktop/dataset/collection-droid"  # 替换为你的源目录路径
-# target_directory = "/home/ubuntu/Desktop/dataset/droidMP4"  # 替换为你的目标目录路径
-# video_extensions = [".mp4", ".avi", ".mov", ".mkv"]  # 添加需要支持的视频格式
+# # Example usage
+# source_directory = "/home/ubuntu/Desktop/dataset/collection-droid"  # Replace with your source directory path
+# target_directory = "/home/ubuntu/Desktop/dataset/droidMP4"  # Replace with your target directory path
+# video_extensions = [".mp4", ".avi", ".mov", ".mkv"]  # Add video formats to support
 #
 # extract_and_rename_videos(source_directory, target_directory, video_extensions)
 
@@ -45,49 +44,50 @@ import shutil
 
 def extract_videos_in_batches(source_dir, target_dir, extensions, batch_size):
     """
-    将文件夹中的视频每 batch_size 个提取到一个子文件夹中（直接移动）。
+    Extracts videos from a folder into subfolders, with each subfolder
+    containing up to 'batch_size' videos (by moving them directly).
 
-    :param source_dir: 要搜索视频文件的源目录。
-    :param target_dir: 视频文件提取到的目标目录。
-    :param extensions: 视频文件的扩展名列表（如[".mp4", ".avi"]）。
-    :param batch_size: 每个目标子目录包含的最大视频文件数。
+    :param source_dir: The source directory to search for video files.
+    :param target_dir: The target directory where video files will be extracted to.
+    :param extensions: A list of video file extensions (e.g., [".mp4", ".avi"]).
+    :param batch_size: The maximum number of video files per target subfolder.
     """
     if not os.path.exists(target_dir):
         os.makedirs(target_dir)
 
-    file_counter = 0  # 全局计数器，用于计算视频文件总数
-    batch_counter = 1  # 批次计数器，用于创建新的子文件夹
+    file_counter = 0  # Global counter for the total number of video files
+    batch_counter = 1  # Batch counter for creating new subfolders
     current_batch_dir = os.path.join(target_dir, f"batch_{batch_counter}")
     os.makedirs(current_batch_dir, exist_ok=True)
 
-    # 遍历源目录及其所有子目录
+    # Traverse the source directory and all its subdirectories
     for root, _, files in os.walk(source_dir):
         for file in files:
-            # 检查文件扩展名是否是指定的视频格式
+            # Check if the file extension is one of the specified video formats
             if any(file.lower().endswith(ext) for ext in extensions):
                 source_path = os.path.join(root, file)
 
-                # 如果当前批次文件数量达到上限，创建新的子文件夹
-                if file_counter % batch_size == 0 and file_counter > 0:
+                # If the current batch reaches the size limit, create a new subfolder
+                if file_counter > 0 and file_counter % batch_size == 0:
                     batch_counter += 1
                     current_batch_dir = os.path.join(target_dir, f"batch_{batch_counter}")
                     os.makedirs(current_batch_dir, exist_ok=True)
 
-                # 在当前批次文件夹中生成文件路径
+                # Generate the file path in the current batch folder
                 new_name = f"video_{file_counter + 1}{os.path.splitext(file)[1]}"
                 target_path = os.path.join(current_batch_dir, new_name)
 
-                # 移动文件并重命名
+                # Move and rename the file
                 shutil.move(source_path, target_path)
-                print(f"提取并移动: {source_path} -> {target_path}")
+                print(f"Extracted and moved: {source_path} -> {target_path}")
 
                 file_counter += 1
 
 
-# 使用示例
-source_directory = "/home/ubuntu/Desktop/dataset/droidMP4"  # 替换为你的源目录路径
-target_directory = "/home/ubuntu/Desktop/dataset/droid"  # 替换为你的目标目录路径
-video_extensions = [".mp4", ".avi", ".mov", ".mkv"]  # 添加需要支持的视频格式
-batch_size = 1000  # 每个子文件夹中最多的视频数量
+# Example usage
+source_directory = "/home/ubuntu/Desktop/dataset/droidMP4"  # Replace with your source directory path
+target_directory = "/home/ubuntu/Desktop/dataset/droid"  # Replace with your target directory path
+video_extensions = [".mp4", ".avi", ".mov", ".mkv"]  # Add video formats to support
+batch_size = 1000  # The maximum number of videos in each subfolder
 
 extract_videos_in_batches(source_directory, target_directory, video_extensions, batch_size)

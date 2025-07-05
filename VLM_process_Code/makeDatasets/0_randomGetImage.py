@@ -5,39 +5,40 @@ import shutil
 
 def random_sample_images(source_folder, output_folder, num_samples):
     """
-    从图片文件夹中随机抽取指定数量的图片，并保存到目标文件夹。
+    Randomly samples a specified number of images from a source folder
+    and saves them to a target folder.
 
-    :param source_folder: 源图片文件夹路径。
-    :param output_folder: 抽取图片保存的目标文件夹路径。
-    :param num_samples: 要抽取的图片数量。
+    :param source_folder: The path to the source image folder.
+    :param output_folder: The path to the target folder where sampled images will be saved.
+    :param num_samples: The number of images to sample.
     """
-    # 获取图片文件列表
+    # Get the list of image files
     image_files = [f for f in os.listdir(source_folder) if
                    f.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif'))]
 
     if len(image_files) < num_samples:
-        print(f"图片数量不足，源文件夹仅包含 {len(image_files)} 张图片。")
+        print(f"Not enough images to sample. The source folder only contains {len(image_files)} images.")
         return
 
-    # 随机抽取图片
+    # Randomly sample the images
     selected_images = random.sample(image_files, num_samples)
 
-    # 创建目标文件夹（如果不存在）
+    # Create the target folder (if it doesn't exist)
     os.makedirs(output_folder, exist_ok=True)
 
-    # 复制抽取的图片到目标文件夹
+    # Copy the selected images to the target folder
     for image in selected_images:
         source_path = os.path.join(source_folder, image)
         target_path = os.path.join(output_folder, image)
         shutil.copy(source_path, target_path)
-        print(f"已抽取: {image} -> {target_path}")
+        print(f"Sampled and copied: {image} -> {target_path}")
 
-    print(f"随机抽取完成，共抽取 {num_samples} 张图片到 {output_folder}")
+    print(f"Random sampling complete. A total of {num_samples} images were saved to {output_folder}")
 
 
-# 使用示例
-source_folder = "/home/ubuntu/Desktop/dataset/droidCutImage"  # 替换为源图片文件夹路径
-output_folder = "/home/ubuntu/Desktop/dataset/droidCutImage_randomGetTest"  # 替换为目标文件夹路径
-num_samples = 1000  # 替换为要抽取的图片数量
+# Example usage
+source_folder = "/home/ubuntu/Desktop/dataset/droidCutImage"  # Replace with your source image folder path
+output_folder = "/home/ubuntu/Desktop/dataset/droidCutImage_randomGetTest"  # Replace with your target folder path
+num_samples = 1000  # Replace with the number of images to sample
 
 random_sample_images(source_folder, output_folder, num_samples)

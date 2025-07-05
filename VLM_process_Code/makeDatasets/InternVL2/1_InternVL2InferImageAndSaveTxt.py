@@ -25,7 +25,7 @@ def load_image(image_file, input_size=448):
     return pixel_values
 
 
-# 初始化模型
+# Initialize the model
 model_path = '/media/ubuntu/10B4A468B4A451D0/models/InternVL2-8B'
 model = AutoModel.from_pretrained(
     model_path,
@@ -39,22 +39,22 @@ tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True, us
 
 def process_single_image(image_path):
     """
-    处理单张图片并推理位置信息。
-    :param image_path: 图片文件路径。
-    :return: 推理结果文本。
+    Processes a single image and infers spatial information.
+    :param image_path: Path to the image file.
+    :return: The inference result text.
     """
     pixel_values = load_image(image_path).to(torch.bfloat16).cuda()
     generation_config = dict(max_new_tokens=1024, do_sample=True)
-    question = '<image>\n描述场景内物体的空间关系.'
+    question = '<image>\nDescribe the spatial relationships of the objects in the scene.'
     response = model.chat(tokenizer, pixel_values, question, generation_config)
     return response
 
 
 def batch_process_images(image_folder, output_folder):
     """
-    批量处理文件夹中的所有图片，并保存推理结果。
-    :param image_folder: 包含图片的源文件夹。
-    :param output_folder: 结果保存路径。
+    Batch processes all images in a folder and saves the inference results.
+    :param image_folder: The source folder containing images.
+    :param output_folder: The path where results will be saved.
     """
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
@@ -62,20 +62,20 @@ def batch_process_images(image_folder, output_folder):
     image_files = [f for f in os.listdir(image_folder) if f.lower().endswith(('.jpg', '.png', '.jpeg'))]
     for idx, image_file in enumerate(image_files, 1):
         image_path = os.path.join(image_folder, image_file)
-        print(f"处理图片: {image_path} ({idx}/{len(image_files)})")
+        print(f"Processing image: {image_path} ({idx}/{len(image_files)})")
 
-        # 推理
+        # Inference
         output_text = process_single_image(image_path)
 
-        # 保存结果
+        # Save results
         result_file = os.path.join(output_folder, f"{os.path.splitext(image_file)[0]}.txt")
         with open(result_file, 'w', encoding='utf-8') as f:
             f.write(output_text)
 
-        print(f"结果已保存到: {result_file}")
+        print(f"Result saved to: {result_file}")
 
 
-# 使用示例
+# Example usage
 image_folder = "/home/ubuntu/Desktop/dataset/droidCutImage_randomGet"
 output_folder = "/home/ubuntu/Desktop/dataset/droidCutImagePrompt/InternVL2-8B"
 

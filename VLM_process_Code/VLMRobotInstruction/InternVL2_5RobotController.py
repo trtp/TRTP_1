@@ -8,16 +8,17 @@ from PIL import Image
 from torchvision.transforms.functional import InterpolationMode
 from modelscope import AutoModel, AutoTokenizer
 
-# 设定常量
+# Define constants
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_STD = (0.229, 0.224, 0.225)
 
-# 摄像头分辨率
+# Camera resolution
 CAMERA_WIDTH = 640
 CAMERA_HEIGHT = 480
-#INTERNVL_MODEL_PATH = '/media/ubuntu/10B4A468B4A451D0/models/InternVL2_5-8B'
+# INTERNVL_MODEL_PATH = '/media/ubuntu/10B4A468B4A451D0/models/InternVL2_5-8B'
 INTERNVL_MODEL_PATH = '/media/ubuntu/10B4A468B4A451D0/models/InternVL2-8B'
-# 预处理
+
+# Preprocessing
 def build_transform(input_size):
     MEAN, STD = IMAGENET_MEAN, IMAGENET_STD
     transform = T.Compose([
@@ -28,23 +29,23 @@ def build_transform(input_size):
     ])
     return transform
 
-# 动态预处理
+# Dynamic preprocessing
 def dynamic_preprocess(image, image_size=448, max_num=12):
     orig_width, orig_height = image.size
     resized_img = image.resize((image_size, image_size))
-    return [resized_img]  # 这里简化成单张图像，不进行切块
+    return [resized_img]  # Simplified to a single image here, no slicing
 
-# 处理摄像头图像
+# Process camera image
 def preprocess_camera_image(image_surface, input_size=448):
-    image_rgb = pygame.surfarray.array3d(image_surface)  # 转换为 numpy 数组
-    image_pil = Image.fromarray(image_rgb.transpose(1, 0, 2))  # 转换为 PIL.Image
+    image_rgb = pygame.surfarray.array3d(image_surface)  # Convert to a numpy array
+    image_pil = Image.fromarray(image_rgb.transpose(1, 0, 2))  # Convert to a PIL.Image
     processed_images = dynamic_preprocess(image_pil, image_size=input_size)
     transform = build_transform(input_size=input_size)
     pixel_values = [transform(image) for image in processed_images]
     return torch.stack(pixel_values).to(torch.bfloat16).cuda()
 
-# 加载 InternVL2.5-8B
-print("加载模型...")
+# Load InternVL2 model
+print("Loading model...")
 model = AutoModel.from_pretrained(
     INTERNVL_MODEL_PATH,
     torch_dtype=torch.bfloat16,
@@ -53,66 +54,69 @@ model = AutoModel.from_pretrained(
     trust_remote_code=True
 ).eval().cuda()
 tokenizer = AutoTokenizer.from_pretrained(INTERNVL_MODEL_PATH, trust_remote_code=True, use_fast=False)
-print("模型加载完成！")
+print("Model loaded successfully!")
 
-# 初始化摄像头
+# Initialize the camera
 pygame.init()
 pygame.camera.init()
 cam_list = pygame.camera.list_cameras()
 if not cam_list:
-    print("未找到摄像头")
+    print("No camera found")
     exit()
 cam = pygame.camera.Camera(cam_list[0], (CAMERA_WIDTH, CAMERA_HEIGHT))
 cam.start()
 
-# 创建 PyGame 窗口
+# Create a PyGame window
 screen = pygame.display.set_mode((CAMERA_WIDTH, CAMERA_HEIGHT))
-pygame.display.set_caption("摄像头实时画面")
+pygame.display.set_caption("Real-time Camera Feed")
 font = pygame.font.Font(None, 36)
 
-# 主循环
+# Main loop
 running = True
-last_inference_time = 0  # 上次推理时间
-inference_interval = 1.0  # 每秒推理一次
-display_text = "等待推理..."
+last_inference_time = 0  # Last inference time
+inference_interval = 1.0  # Infer once per second
+display_text = "Waiting for inference..."
 
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
-    # 获取摄像头画面
+    # Get the camera frame
     image_surface = cam.get_image()
     screen.blit(image_surface, (0, 0))
 
-    # 进行推理（每秒一次）
+    # Perform inference (once per second)
     current_time = time.time()
     if current_time - last_inference_time > inference_interval:
         last_inference_time = current_time
 
-        # 预处理摄像头图像
+        # Preprocess the camera image
         start_time = time.time()
         pixel_values = preprocess_camera_image(image_surface, input_size=448)
 
-        # 发送给模型
-        question = '<image>\n请观察图像中人的手和瓶子的位置关系。任务是指挥手拿到杯子。若任务尚未完成，请选择以下指令之一：往前，往后，往左，往右，往上，往下，抓住，松开。若任务完成了，请输出“任务完成”。请只输出其中一个命令。'
+        # Send to the model
+        question = ('<image>\nObserve the positional relationship between the person\'s hand and the bottle in the image. '
+                    'The task is to guide the hand to grab the cup. If the task is not yet complete, please choose one '
+                    'of the following commands: forward, backward, left, right, up, down, grasp, release. '
+                    'If the task is complete, please output "Task complete". Please output only one of these commands.')
         generation_config = dict(max_new_tokens=128, do_sample=True)
         response = model.chat(tokenizer, pixel_values, question, generation_config)
 
-        # 计算推理时间
+        # Calculate inference time
         elapsed_time = time.time() - start_time
-        print(f"推理时间: {elapsed_time:.3f} 秒")
-        print(f"模型输出: {response}")
+        print(f"Inference time: {elapsed_time:.3f} seconds")
+        print(f"Model output: {response}")
 
-        # 显示推理结果
+        # Display inference result
         display_text = response
 
-    # 在屏幕上绘制推理文本
+    # Draw the inference text on the screen
     text_surface = font.render(display_text, True, (255, 0, 0))
     screen.blit(text_surface, (10, 10))
 
     pygame.display.update()
 
-# 释放资源
+# Release resources
 cam.stop()
 pygame.quit()

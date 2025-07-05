@@ -11,6 +11,7 @@ from torchvision.transforms.functional import InterpolationMode
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_STD = (0.229, 0.224, 0.225)
 
+
 def build_transform(input_size):
     MEAN, STD = IMAGENET_MEAN, IMAGENET_STD
     transform = T.Compose([
@@ -20,6 +21,8 @@ def build_transform(input_size):
         T.Normalize(mean=MEAN, std=STD)
     ])
     return transform
+
+
 def get_index(bound, fps, max_frame, first_idx=0, num_segments=32):
     if bound:
         start, end = bound[0], bound[1]
@@ -33,6 +36,7 @@ def get_index(bound, fps, max_frame, first_idx=0, num_segments=32):
         for idx in range(num_segments)
     ])
     return frame_indices
+
 
 def find_closest_aspect_ratio(aspect_ratio, target_ratios, width, height, image_size):
     best_ratio_diff = float('inf')
@@ -48,6 +52,7 @@ def find_closest_aspect_ratio(aspect_ratio, target_ratios, width, height, image_
             if area > 0.5 * image_size * image_size * ratio[0] * ratio[1]:
                 best_ratio = ratio
     return best_ratio
+
 
 def dynamic_preprocess(image, min_num=1, max_num=12, image_size=448, use_thumbnail=False):
     orig_width, orig_height = image.size
@@ -81,6 +86,7 @@ def dynamic_preprocess(image, min_num=1, max_num=12, image_size=448, use_thumbna
         processed_images.append(thumbnail_img)
     return processed_images
 
+
 def load_video(video_path, bound=None, input_size=448, max_num=1, num_segments=32):
     vr = VideoReader(video_path, ctx=cpu(0), num_threads=1)
     max_frame = len(vr) - 1
@@ -99,30 +105,36 @@ def load_video(video_path, bound=None, input_size=448, max_num=1, num_segments=3
     pixel_values = torch.cat(pixel_values_list)
     return pixel_values, num_patches_list
 
+
 def load_model(model_path):
     """
-    加载大模型和处理器。
-    :param model_path: 模型路径。
-    :return: 模型和处理器。
+    Loads the large model and its tokenizer.
+    :param model_path: The path to the model.
+    :return: The model and tokenizer.
     """
-    model = AutoModel.from_pretrained(model_path, torch_dtype=torch.bfloat16, low_cpu_mem_usage=True).eval().cuda()
+    model = AutoModel.from_pretrained(model_path, torch_dtype=torch.bfloat16, low_cpu_mem_usage=True,
+                                      use_flash_attn=True).eval().cuda()
     tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False, trust_remote_code=True)
     return model, tokenizer
 
-def infer_task_planning(model, tokenizer, video_path,prompt, num_segments=8):
+
+def infer_task_planning(model, tokenizer, video_path, prompt, num_segments=8):
     """
-    使用大模型推理视频中的任务规划。
-    :param model: 加载的大模型。
-    :param tokenizer: 模型处理器。
-    :param video_path: 视频路径。
-    :param num_segments: 分段数。
-    :return: 推理结果字符串。
+    Infers the task plan from a video using the large model.
+    :param model: The loaded large model.
+    :param tokenizer: The model's tokenizer.
+    :param video_path: The path to the video.
+    :param prompt: The scene description prompt.
+    :param num_segments: The number of segments.
+    :return: The inference result as a string.
     """
     pixel_values, num_patches_list = load_video(video_path, num_segments=num_segments, max_num=1)
     pixel_values = pixel_values.to(torch.bfloat16).cuda()
 
     video_prefix = ''.join([f'Frame{i + 1}: <image>\n' for i in range(len(num_patches_list))])
-    question ="这是对视频截图空间场景的描述，给你作为参考" +prompt + video_prefix + '列出视频中的机械手的动作序列，被机械手抓住的物体和动作以及方位要具体'
+    question = ("This is a description of the spatial scene from the video frames, for your reference:"
+                + prompt + video_prefix +
+                'List the action sequence of the robotic arm. Be specific about the object being grasped, the action, and the orientation.')
 
     response, history = model.chat(tokenizer, pixel_values, question,
                                    generation_config=dict(max_new_tokens=1024, do_sample=True),
@@ -133,107 +145,51 @@ def infer_task_planning(model, tokenizer, video_path,prompt, num_segments=8):
 
 def update_dataset_with_inference(model, tokenizer, input_json, output_json):
     """
-    将大模型推理结果填入数据集的 gpt 字段。
-    :param model: 加载的大模型。
-    :param tokenizer: 模型处理器。
-    :param input_json: 输入 JSON 文件路径。
-    :param output_json: 输出 JSON 文件路径。
+    Fills the 'gpt' field of a dataset with the inference results from the large model.
+    :param model: The loaded large model.
+    :param tokenizer: The model's tokenizer.
+    :param input_json: The path to the input JSON file.
+    :param output_json: The path to the output JSON file.
     """
-    # 加载输入数据集
+    # Load the input dataset
     with open(input_json, 'r', encoding='utf-8') as f:
         dataset = json.load(f)
-    # print(f"dataset: {dataset}")
-    # 遍历每一项数据，进行推理
-    for item in dataset:
 
+    # Iterate through each item and perform inference
+    for item in dataset:
         video_path = item["videos"][0]
         prompt = item["conversations"][0]["value"]
-        #prompt = ""
-        # 调用推理函数
-        print(f"正在处理视频: {video_path}")
-        #print(f"当前prompt: {prompt}")
-        try:
-            gpt_result = infer_task_planning(model, tokenizer, video_path,prompt)
-            item["conversations"][2]["value"] = gpt_result
-            print(f"推理完成: {gpt_result}")
-        except Exception as e:
-            print(f"推理失败: {video_path}, 错误信息: {e}")
 
-    # 保存更新后的数据集
+        # Call the inference function
+        print(f"Processing video: {video_path}")
+        try:
+            gpt_result = infer_task_planning(model, tokenizer, video_path, prompt)
+            item["conversations"][2]["value"] = gpt_result
+            print(f"Inference complete: {gpt_result}")
+        except Exception as e:
+            print(f"Inference failed for: {video_path}, Error: {e}")
+
+    # Save the updated dataset
     with open(output_json, 'w', encoding='utf-8') as f:
         json.dump(dataset, f, ensure_ascii=False, indent=4)
-    print(f"更新后的数据集已保存到: {output_json}")
+    print(f"Updated dataset has been saved to: {output_json}")
 
 
 if __name__ == "__main__":
-    # 定义路径
+    # Define paths
     model_path = '/media/ubuntu/10B4A468B4A451D0/models/InternVL2_5-8B'
 
-    # 定义 input_json 和 output_json 对应列表
+    # Define a list of corresponding input_json and output_json pairs
     dataset_pairs = [
         ("/home/ubuntu/Desktop/dataset/droidJsonDatset/02/InternVL2-8B-prompt-output_dataset.json",
          "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/InternVL2_5-8B_infer_InternVL2-8B-prompt.json"),
-
-        # ("/home/ubuntu/Desktop/dataset/droidJsonDatset/02/InternVL2_5-8B-prompt-output_dataset.json",
-        #  "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/InternVL2_5-8B_infer_InternVL2_5-8B-prompt.json"),
-        #
-        # ("/home/ubuntu/Desktop/dataset/droidJsonDatset/02/Llama-3.2-11B-prompt-output_dataset.json",
-        #  "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/InternVL2_5-8B_infer_Llama-3.2-11B-_prompt.json"),
-        #
-        # ("/home/ubuntu/Desktop/dataset/droidJsonDatset/02/llava-onevision-qwen2-7b-ov-hf-prompt-output_dataset.json",
-        #  "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/InternVL2_5-8B_infer_llava-onevision-qwen2-7b-ov-hf-prompt.json"),
-        #
-        # ("/home/ubuntu/Desktop/dataset/droidJsonDatset/02/llava-v1.6-vicuna-7b-hf-prompt-output_dataset.json",
-        #  "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/InternVL2_5-8B_infer_llava-v1.6-vicuna-7b-hf-prompt.json"),
-        #
-        # ("/home/ubuntu/Desktop/dataset/droidJsonDatset/02/MiniCPM-V-2_prompt_6output_dataset.json",
-        #  "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/InternVL2_5-8B_infer_MiniCPM-V-2_prompt.json"),
-        #
-        # ("/home/ubuntu/Desktop/dataset/droidJsonDatset/02/Molmo-7B-D-0924-prompt-output_dataset.json",
-        #  "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/InternVL2_5-8B_infer_Molmo-7B-D-0924-prompt.json"),
-        #
-        # ("/home/ubuntu/Desktop/dataset/droidJsonDatset/02/Ovis1.6-Gemma2-9B_prompt_output_dataset.json",
-        #  "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/InternVL2_5-8B_infer_Ovis1.6-Gemma2-9B_prompt.json"),
-        #
-        # ("/home/ubuntu/Desktop/dataset/droidJsonDatset/02/Qwen2VL7B_prompt_dataset.json",
-        #  "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/InternVL2_5-8B_infer_Qwen2VL7B_prompt.json")
     ]
 
-    # 加载模型
+    # Load the model
     model, tokenizer = load_model(model_path)
 
-    # 遍历 dataset_pairs 逐个处理
+    # Iterate through dataset_pairs and process each one
     for input_json, output_json in dataset_pairs:
         print(f"Processing: {input_json} -> {output_json}")
         update_dataset_with_inference(model, tokenizer, input_json, output_json)
         print(f"Finished processing: {input_json}\n")
-
-# 使用示例
-# if __name__ == "__main__":
-#     # 定义路径
-#     model_path = '/media/ubuntu/10B4A468B4A451D0/models/InternVL2_5-8B'
-#     input_json = "/home/ubuntu/Desktop/dataset/droidJsonDatset/02/InternVL2-8B-prompt-output_dataset.json"
-#   #  input_json = "/home/ubuntu/Desktop/dataset/droidJsonDatset/02/InternVL2_5-8B-prompt-output_dataset.json"
-#    # input_json = "/home/ubuntu/Desktop/dataset/droidJsonDatset/02/llava-v1.6-vicuna-7b-hf-prompt-output_dataset.json"
-#     #input_json = "/home/ubuntu/Desktop/dataset/droidJsonDatset/02/MiniCPM-V-2_prompt_6output_dataset.json"
-#     #input_json = "/home/ubuntu/Desktop/dataset/droidJsonDatset/02/Molmo-7B-D-0924-prompt-output_dataset.json"
-#     #input_json = "/home/ubuntu/Desktop/dataset/droidJsonDatset/02/Ovis1.6-Gemma2-9B_prompt_output_dataset.json"
-#    # input_json = "/home/ubuntu/Desktop/dataset/droidJsonDatset/02/Qwen2VL7B_prompt_dataset.json"
-#
-#
-#
-#
-#     output_json = "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/InternVL2_5-8B_infer_InternVL2-8B-prompt.json"
-#   #  output_json = "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/InternVL2_5-8B_infer_InternVL2_5-8B-prompt.json"
-#   #  output_json = "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/InternVL2_5-8B_infer_llava-v1.6-vicuna-7b-hf-prompt.json"
-#   #  output_json = "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/InternVL2_5-8B_infer_MiniCPM-V-2_prompt.json"
-#   #  output_json = "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/InternVL2_5-8B_infer_Molmo-7B-D-0924-prompt.json"
-#   #  output_json = "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/InternVL2_5-8B_infer_Ovis1.6-Gemma2-9B_prompt.json"
-#   #  output_json = "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/InternVL2_5-8B_infer_Qwen2VL7B_prompt.json"
-#
-#
-#     # 加载模型
-#     model, tokenizer = load_model(model_path)
-#
-#     # 更新数据集
-#     update_dataset_with_inference(model, tokenizer, input_json, output_json)

@@ -9,12 +9,12 @@ MAX_NUM_FRAMES = 64
 params = {}
 
 
-# 加载模型和处理器
+# Load the model and processor
 def load_model(model_name):
     """
-    加载模型和分词器。
-    :param model_name: 模型名称。
-    :return: 加载的模型和分词器。
+    Loads the model and its tokenizer.
+    :param model_name: The name of the model.
+    :return: The loaded model and tokenizer.
     """
     model = AutoModel.from_pretrained(model_name, trust_remote_code=True,
                                       attn_implementation='sdpa', torch_dtype=torch.bfloat16)
@@ -23,15 +23,17 @@ def load_model(model_name):
     return model, tokenizer
 
 
-# 编码视频函数
+# Video encoding function
 def encode_video(video_path):
     """
-    提取视频中的帧。
-    :param video_path: 视频路径。
-    :return: 帧列表。
+    Extracts frames from the video.
+    :param video_path: Path to the video.
+    :return: A list of frames.
     """
 
     def uniform_sample(l, n):
+        if len(l) <= n:
+            return l
         gap = len(l) / n
         idxs = [int(i * gap + gap / 2) for i in range(n)]
         return [l[i] for i in idxs]
@@ -43,32 +45,32 @@ def encode_video(video_path):
         frame_idx = uniform_sample(frame_idx, MAX_NUM_FRAMES)
     frames = vr.get_batch(frame_idx).asnumpy()
     frames = [Image.fromarray(v.astype('uint8')) for v in frames]
-    print('num frames:', len(frames))
+    print('Number of frames:', len(frames))
     return frames
 
 
-# 推理函数
+# Inference function
 def infer_task_planning(model, tokenizer, video_path, question):
     """
-    使用模型推理视频中的任务规划。
-    :param model: 加载的模型。
-    :param tokenizer: 模型分词器。
-    :param video_path: 视频路径。
-    :param question: 提问。
-    :return: 推理结果。
+    Infers the task plan from a video using the model.
+    :param model: The loaded model.
+    :param tokenizer: The model's tokenizer.
+    :param video_path: Path to the video.
+    :param question: The question or prompt.
+    :return: The inference result.
     """
     frames = encode_video(video_path)
     msgs = [
         {'role': 'user', 'content': frames + [question]},
     ]
 
-    # 设置解码参数
+    # Set decoding parameters
     params = {
         "use_image_id": False,
-        "max_slice_nums": 2  # 若CUDA OOM且视频分辨率大于448*448，可以设为1
+        "max_slice_nums": 2  # If CUDA OOM and video resolution is > 448x448, this can be set to 1
     }
 
-    # 推理并获取结果
+    # Infer and get the result
     answer = model.chat(
         image=None,
         msgs=msgs,
@@ -78,93 +80,57 @@ def infer_task_planning(model, tokenizer, video_path, question):
     return answer
 
 
-# 更新数据集函数
+# Dataset update function
 def update_dataset_with_inference(model, tokenizer, input_json, output_json):
     """
-    将推理结果更新到数据集中。
-    :param model: 加载的模型。
-    :param tokenizer: 模型分词器。
-    :param input_json: 输入数据集路径。
-    :param output_json: 输出数据集路径。
+    Updates the dataset with the inference results.
+    :param model: The loaded model.
+    :param tokenizer: The model's tokenizer.
+    :param input_json: Path to the input dataset.
+    :param output_json: Path to the output dataset.
     """
-    # 加载输入数据集
+    # Load the input dataset
     with open(input_json, 'r', encoding='utf-8') as f:
         dataset = json.load(f)
 
-    # 遍历每一项数据，进行推理
+    # Iterate through each item and perform inference
     for item in dataset:
         video_path = item["videos"][0]
         prompt = item["conversations"][0]["value"]
-        #prompt =""
-        question = "这是对视频截图空间场景的描述，给你作为参考"  + prompt + "列出视频中的机械手的动作序列"  # 可以修改为实际问题
-        #question = "列出视频中的机械手的动作序列，被机械手抓住的物体和动作以及方位要具体"
-        # 调用推理函数
-        print(f"正在处理视频: {video_path}")
+        question = "This is a description of the spatial scene from the video frames, for your reference:" + prompt + "List the action sequence of the robotic arm in the video"
+
+        # Call the inference function
+        print(f"Processing video: {video_path}")
         try:
             gpt_result = infer_task_planning(model, tokenizer, video_path, question)
             item["conversations"][2]["value"] = gpt_result
-            print(f"推理完成: {gpt_result}")
+            print(f"Inference complete: {gpt_result}")
         except Exception as e:
-            print(f"推理失败: {video_path}, 错误信息: {e}")
+            print(f"Inference failed for: {video_path}, Error: {e}")
 
-    # 保存更新后的数据集
+    # Save the updated dataset
     with open(output_json, 'w', encoding='utf-8') as f:
         json.dump(dataset, f, ensure_ascii=False, indent=4)
-    print(f"更新后的数据集已保存到: {output_json}")
+    print(f"Updated dataset has been saved to: {output_json}")
 
 
 if __name__ == "__main__":
-    # 定义路径
+    # Define paths
     model_path = "/media/ubuntu/10B4A468B4A451D0/models/MiniCPM-V-2_6"
 
-    # 定义 input_json 和 output_json 对应列表
+    # Define a list of corresponding input_json and output_json pairs
     dataset_pairs = [
-        # ("/home/ubuntu/Desktop/dataset/droidJsonDatset/02/InternVL2-8B-prompt-output_dataset.json",
-        #  "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/MiniCPM-V-2_6_infer_InternVL2-8B-prompt.json"),
-
         ("/home/ubuntu/Desktop/dataset/droidJsonDatset/02/InternVL2_5-8B-prompt-output_dataset.json",
          "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/MiniCPM-V-2_6_infer_InternVL2_5-8B-prompt.json"),
-
         ("/home/ubuntu/Desktop/dataset/droidJsonDatset/02/Llama-3.2-11B-prompt-output_dataset.json",
          "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/MiniCPM-V-2_6_infer_Llama-3.2-11B-_prompt.json"),
-
-        # ("/home/ubuntu/Desktop/dataset/droidJsonDatset/02/llava-onevision-qwen2-7b-ov-hf-prompt-output_dataset.json",
-        #  "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/MiniCPM-V-2_6_infer_llava-onevision-qwen2-7b-ov-hf-prompt.json"),
-        #
-        # ("/home/ubuntu/Desktop/dataset/droidJsonDatset/02/llava-v1.6-vicuna-7b-hf-prompt-output_dataset.json",
-        #  "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/MiniCPM-V-2_6_infer_llava-v1.6-vicuna-7b-hf-prompt.json"),
-        #
-        # ("/home/ubuntu/Desktop/dataset/droidJsonDatset/02/MiniCPM-V-2_prompt_6output_dataset.json",
-        #  "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/MiniCPM-V-2_6_infer_MiniCPM-V-2_prompt.json"),
-        #
-        # ("/home/ubuntu/Desktop/dataset/droidJsonDatset/02/Molmo-7B-D-0924-prompt-output_dataset.json",
-        #  "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/MiniCPM-V-2_6_infer_Molmo-7B-D-0924-prompt.json"),
-        #
-        # ("/home/ubuntu/Desktop/dataset/droidJsonDatset/02/Ovis1.6-Gemma2-9B_prompt_output_dataset.json",
-        #  "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/MiniCPM-V-2_6_infer_Ovis1.6-Gemma2-9B_prompt.json"),
-        #
-        # ("/home/ubuntu/Desktop/dataset/droidJsonDatset/02/Qwen2VL7B_prompt_dataset.json",
-        #  "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/MiniCPM-V-2_6_infer_Qwen2VL7B_prompt.json")
     ]
 
-    # 加载模型
+    # Load the model
     model, tokenizer = load_model(model_path)
 
-    # 遍历 dataset_pairs 逐个处理
+    # Iterate through dataset_pairs and process each one
     for input_json, output_json in dataset_pairs:
         print(f"Processing: {input_json} -> {output_json}")
         update_dataset_with_inference(model, tokenizer, input_json, output_json)
         print(f"Finished processing: {input_json}\n")
-
-# 使用示例
-# if __name__ == "__main__":
-#     # 定义路径
-#     model_name = "/media/ubuntu/10B4A468B4A451D0/models/MiniCPM-V-2_6"
-#     input_json = "/home/ubuntu/Desktop/dataset/droidJsonDatset/internvl2_8b_updated_dataset.json"
-#     output_json = "/home/ubuntu/Desktop/dataset/droidJsonDatset/internvl2_8b_data_mini_cpm_infer_updated_dataset.json"
-#
-#     # 加载模型
-#     model, tokenizer = load_model(model_name)
-#
-#     # 更新数据集
-#     update_dataset_with_inference(model, tokenizer, input_json, output_json)

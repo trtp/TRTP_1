@@ -7,7 +7,7 @@ from qwen_vl_utils import process_vision_info
 
 torch.cuda.empty_cache()
 
-# 1. 加载模型和预处理器
+# 1. Load the model and processor
 model_path = "/home/ubuntu/Desktop/Qwen2-VL-2B-Instruct"
 model = Qwen2VLForConditionalGeneration.from_pretrained(
     model_path,
@@ -18,17 +18,18 @@ model.to(device)
 processor = AutoProcessor.from_pretrained(model_path)
 
 
-# 2. 定义控制机械臂的函数（实际使用时需调用具体机械臂接口）
+# 2. Define a function to control the robotic arm (in a real scenario, this would call a specific arm's API)
 def send_command_to_robotic_arm(command):
-    print("发送给机械臂的指令：", command)
+    print("Sending command to robotic arm:", command)
 
 
-# 3. 封装模型推理部分为函数
+# 3. Encapsulate the model inference part into a function
 def model_inference(messages, processor, model, device):
     """
-    对输入的消息进行处理，并使用模型进行推理，返回生成的文本结果。
+    Processes the input messages and performs inference with the model,
+    returning the generated text result.
     """
-    # 生成文本提示和处理视觉信息
+    # Generate text prompt and process visual information
     text = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
     image_inputs, video_inputs = process_vision_info(messages)
     inputs = processor(
@@ -40,7 +41,7 @@ def model_inference(messages, processor, model, device):
     )
     inputs = inputs.to(device)
 
-    # 模型推理
+    # Model inference
     generated_ids = model.generate(**inputs, max_new_tokens=128)
     generated_ids_trimmed = [
         out_ids[len(in_ids):] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
@@ -51,27 +52,27 @@ def model_inference(messages, processor, model, device):
     return output_text
 
 
-# 4. 定义允许的机械臂指令（增加“任务完成”作为退出指令）
-allowed_commands = ["往前", "往后", "往左", "往右", "往上", "往下", "待机", "任务完成"]
+# 4. Define allowed robotic arm commands (add "Task complete" as an exit command)
+allowed_commands = ["forward", "backward", "left", "right", "up", "down", "standby", "Task complete"]
 
-# 5. 初始化摄像头并显示界面
-cap = cv2.VideoCapture(0, cv2.CAP_V4L2)  # 如有需要可调整索引或后端
+# 5. Initialize the camera and display the feed
+cap = cv2.VideoCapture(0, cv2.CAP_V4L2)  # Adjust index or backend if necessary
 if not cap.isOpened():
-    print("无法打开摄像头")
+    print("Could not open camera")
     exit()
 
 try:
     while True:
         ret, frame = cap.read()
         if not ret:
-            print("无法从摄像头读取画面")
+            print("Could not read frame from camera")
             break
 
-        # 将 OpenCV BGR 图像转换为 RGB，并转换为 PIL Image
+        # Convert OpenCV BGR image to RGB, then to a PIL Image
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         pil_image = Image.fromarray(frame_rgb)
 
-        # 构造输入消息：当任务完成时输出“任务完成”，否则仅输出六个方向之一
+        # Construct the input message
         messages = [
             {
                 "role": "user",
@@ -79,8 +80,11 @@ try:
                     {
                         "type": "text",
                         "text": (
-                            "请观察图像中人的手和瓶子的位置关系。任务是指挥手拿到杯子。若任务尚未完成，请选择以下指令之一：往前，往后，往左，往右，往上，往下，抓住，松开。若任务完成了，请输出“任务完成”。请只输出其中一个命令。"
-
+                            "Observe the positional relationship between the person's hand and the bottle in the image. "
+                            "The task is to guide the hand to grab the cup. If the task is not yet complete, please "
+                            "choose one of the following commands: forward, backward, left, right, up, down, grasp, release. "
+                            "If the task is complete, please output 'Task complete'. "
+                            "Please output only one of these commands."
                         )
                     },
                     {"type": "image", "image": pil_image},
@@ -88,29 +92,29 @@ try:
             }
         ]
 
-        start_time = time.time()  # 开始计时
+        start_time = time.time()  # Start timing
 
-        # 调用模型推理函数
+        # Call the model inference function
         output_text = model_inference(messages, processor, model, device)
         elapsed_time = time.time() - start_time
 
-        print(f"本次推理耗时: {elapsed_time:.6f} 秒")
+        print(f"Inference time for this cycle: {elapsed_time:.6f} seconds")
 
-        # 获取模型输出，并做简单过滤
+        # Get the model output and apply simple filtering
         command = output_text[0].strip() if output_text else ""
         if command not in allowed_commands:
-            command = "待机"
-        print("模型输出：", command)
+            command = "standby"
+        print("Model output:", command)
 
-        # 下发指令给机械臂
+        # Send the command to the robotic arm
         send_command_to_robotic_arm(command)
 
-        # 如果模型输出“任务完成”，则退出循环
-        if command == "任务完成":
-            print("任务完成，停止推理。")
+        # If the model outputs "Task complete", exit the loop
+        if command == "Task complete":
+            print("Task complete, stopping inference.")
             break
 
-        # 在窗口中显示摄像头画面，按 'q' 键也可手动退出
+        # Display the camera feed in a window, press 'q' to exit manually
         cv2.imshow('Camera Feed', frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
