@@ -19,7 +19,7 @@ from VLM_process_Code.makeDatasets.Emu3.emu3.mllm.processing_emu3 import Emu3Pro
 # prepare model and processor
 model = AutoModelForCausalLM.from_pretrained(
     model_path,
-    device_map="balanced",  # 自动分配到多张显卡
+    device_map="balanced",
     offload_folder="offload",
     # attn_implementation="flash_attention_2",
     trust_remote_code=True,

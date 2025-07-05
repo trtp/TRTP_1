@@ -97,6 +97,6 @@ def InternVL2_process_image(image_path, question):
     pixel_values = load_image(image_path, max_num=12).to(torch.bfloat16).cuda()
     generation_config = dict(max_new_tokens=1024, do_sample=True)
 
-    # question = '<image>\n描述场景内物体及其空间关系.'
+    # question = '<image>\nDescribe the objects and their spatial relationships within the scene'
     response = model.chat(tokenizer, pixel_values, question, generation_config)
     print(f'User: {question}\nAssistant: {response}')

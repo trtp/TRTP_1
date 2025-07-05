@@ -94,7 +94,7 @@ tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True, use_fast
 pixel_values = load_image('/home/ubuntu/Desktop/dataset/droidCutImage_randomGet/video_2611_frame.jpg', max_num=12).to(torch.bfloat16).cuda()
 generation_config = dict(max_new_tokens=1024, do_sample=True)
 
-# video multi-round conversation (视频多轮对话)
+# video multi-round conversation
 def get_index(bound, fps, max_frame, first_idx=0, num_segments=32):
     if bound:
         start, end = bound[0], bound[1]

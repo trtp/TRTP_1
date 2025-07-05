@@ -7,12 +7,12 @@
 📌 Note: Paper link will be shared publicly after acceptance.
 ---
 
-## 🧩 Overview
+##  Overview
 
 **TRTP** introduces a **three-stage framework** for robust robot task planning. It integrates:
-1. ✴️ **Spatial prompt modeling** using VLMs (e.g., Qwen-VL, InternVL);
-2. 🧠 **Digital twin simulation with error feedback**, enabling iterative correction;
-3. ⚙️ **Closed-loop planning pipeline** grounded in visual, spatial, and physical consistency.
+1.  **Spatial prompt modeling** using VLMs (e.g., Qwen-VL, InternVL);
+2.  **Digital twin simulation with error feedback**, enabling iterative correction;
+3.  **Closed-loop planning pipeline** grounded in visual, spatial, and physical consistency.
 
 This repository contains **all components** to reproduce the system, including:
 - VLM spatial relation extraction and fusion
@@ -23,7 +23,7 @@ This repository contains **all components** to reproduce the system, including:
 
 ---
 
-## 📂 Repository Structure
+##  Repository Structure
 
 ```bash
 TRTP_1/
@@ -37,7 +37,7 @@ TRTP_1/
 
 ---
 
-## 🔧 Setup & Installation
+##  Setup & Installation
 
 ```bash
 # Clone the repo
@@ -55,7 +55,7 @@ You may also need:
 
 ---
 
-## 🔨 Modules
+##  Modules
 
 ### ① VLM Process Module (`VLM_process_Code/`)
 
@@ -81,7 +81,7 @@ Implements:
 
 > **Note**: Full mesh-based simulation is implemented in **Unreal Engine 5**, where structured prompts are imported via JSON interface.
 
-🔧 Robot model: [Manipulator Robot from FAB](https://www.fab.com/zh-cn/listings/65192c8a-b0e0-4e8d-8a9c-f2f8b7185f27)
+Robot model: [Manipulator Robot from FAB](https://www.fab.com/zh-cn/listings/65192c8a-b0e0-4e8d-8a9c-f2f8b7185f27)
 
 ### ③ Model Fine-tuning (`src/`)
 
@@ -98,7 +98,7 @@ bash finetune_qwen2vl.sh
 
 ---
 
-## 🧪 Evaluation
+##  Evaluation
 
 We evaluate TRTP on:
 - 5 real-world scene tasks
@@ -108,7 +108,7 @@ We evaluate TRTP on:
 
 ---
 
-## 🎥 Simulation & Visualization
+##  Simulation & Visualization
 
 <p align="center"><img src="assets/trtp_sim_loop.gif" width="600"></p>
 
@@ -137,13 +137,13 @@ Structured Error Prompt (example):
 
 ---
 
-## 🧾 License
+##  License
 
 This repository is licensed under the **MIT License**.
 
 ---
 
-## 🙏 Acknowledgements
+##  Acknowledgements
 
 - [Qwen2VL](https://github.com/Qwen-VL) by Alibaba DAMO
 - [InternVL](https://github.com/OpenGVLab/InternVL)

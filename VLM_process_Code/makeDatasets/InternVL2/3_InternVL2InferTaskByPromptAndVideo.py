@@ -206,29 +206,3 @@ if __name__ == "__main__":
         update_dataset_with_inference(model, tokenizer, input_json, output_json)
         print(f"Finished processing: {input_json}\n")
 
-# # 使用示例
-# if __name__ == "__main__":
-#     # 定义路径
-#     model_path = '/media/ubuntu/10B4A468B4A451D0/models/InternVL2-8B'
-#
-#     input_json = "/home/ubuntu/Desktop/dataset/droidJsonDatset/02/InternVL2-8B-prompt-output_dataset.json"
-#     #  input_json = "/home/ubuntu/Desktop/dataset/droidJsonDatset/02/InternVL2_5-8B-prompt-output_dataset.json"
-#     # input_json = "/home/ubuntu/Desktop/dataset/droidJsonDatset/02/llava-v1.6-vicuna-7b-hf-prompt-output_dataset.json"
-#     # input_json = "/home/ubuntu/Desktop/dataset/droidJsonDatset/02/MiniCPM-V-2_prompt_6output_dataset.json"
-#     # input_json = "/home/ubuntu/Desktop/dataset/droidJsonDatset/02/Molmo-7B-D-0924-prompt-output_dataset.json"
-#     # input_json = "/home/ubuntu/Desktop/dataset/droidJsonDatset/02/Ovis1.6-Gemma2-9B_prompt_output_dataset.json"
-#     # input_json = "/home/ubuntu/Desktop/dataset/droidJsonDatset/02/Qwen2VL7B_prompt_dataset.json"
-#
-#     output_json = "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/InternVL2-8B_infer_InternVL2-8B-prompt.json"
-#     #  output_json = "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/InternVL2-8B_infer_InternVL2_5-8B-prompt.json"
-#     #  output_json = "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/InternVL2-8B_infer_llava-v1.6-vicuna-7b-hf-prompt.json"
-#     #  output_json = "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/InternVL2-8B_infer_MiniCPM-V-2_prompt.json"
-#     #  output_json = "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/InternVL2-8B_infer_Molmo-7B-D-0924-prompt.json"
-#     #  output_json = "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/InternVL2-8B_infer_Ovis1.6-Gemma2-9B_prompt.json"
-#     #  output_json = "/home/ubuntu/Desktop/dataset/droidJsonDatset/03/InternVL2-8B_infer_Qwen2VL7B_prompt.json"
-#
-#     # 加载模型
-#     model, tokenizer = load_model(model_path)
-#
-#     # 更新数据集
-#     update_dataset_with_inference(model, tokenizer, input_json, output_json)

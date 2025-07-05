@@ -95,7 +95,7 @@ tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True, use_fast
 pixel_values = load_image('/home/ubuntu/Desktop/dataset/droidCutImage_randomGet/video_2611_frame.jpg', max_num=12).to(torch.bfloat16).cuda()
 generation_config = dict(max_new_tokens=1024, do_sample=True)
 
-# # pure-text conversation (纯文本对话)
+# # pure-text conversation
 # question = 'Hello, who are you?'
 # response, history = model.chat(tokenizer, None, question, generation_config, history=None, return_history=True)
 # print(f'User: {question}\nAssistant: {response}')
@@ -104,7 +104,7 @@ generation_config = dict(max_new_tokens=1024, do_sample=True)
 # response, history = model.chat(tokenizer, None, question, generation_config, history=history, return_history=True)
 # print(f'User: {question}\nAssistant: {response}')
 
-# single-image single-round conversation (单图单轮对话)
+# single-image single-round conversation
 question = '<image>\n描述场景内物体的空间关系.'
 response = model.chat(tokenizer, pixel_values, question, generation_config)
 print(f'User: {question}\nAssistant: {response}')
