@@ -72,6 +72,8 @@ TRTP_1/
 
 ### ① VLM Spatial Processing Module (`VLM_process_Code/`)
 
+For more details, see the README file in each subfolder.
+
 This module implements **Stage 1 and 2** of our framework: generating spatial prompts and using them for task planning. It includes a complete pipeline for data processing, inference, and evaluation.
 
 -   **Core Workflow:**
