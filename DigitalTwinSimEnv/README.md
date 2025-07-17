@@ -59,9 +59,11 @@ DigitalTwinSimEnv/
 
 1.  **Clone the repository:**
     ```bash
-    git clone <your-repository-url>
+    git clone https://github.com/trtp/TRTP_1.git
+    cd TRTP_1
     cd DigitalTwinSimEnv
     ```
+    For details on generating depth estimation maps, please refer to https://github.com/DepthAnything/Depth-Anything-V2
 
 2.  **Create and activate a virtual environment (recommended):**
     ```bash
