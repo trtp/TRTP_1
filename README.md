@@ -121,11 +121,16 @@ This module provides the pipeline for fine-tuning a VLM to better understand tas
 ## 📌 Citation
 
 ```bibtex
-@article{TRTP2025,
-  title={A Three-stage Vision-Language Robust Task Planning Framework with Spatial Prompts and Feedback Simulation},
-  author={},
-  journal={},
-  year={}
+@article{Qu2026TRTP,
+  title   = {TRTP: A three-stage robust task planning framework for open worlds via visual-language models and digital twin simulation},
+  author  = {Qu, Yuanjin and Hu, Xiangtao and Chen, Fei and Wei, Zhihong},
+  journal = {Applied Intelligence},
+  year    = {2026},
+  volume  = {56},
+  number  = {4},
+  month   = {February},
+  doi     = {10.1007/s10489-026-07143-y},
+  publisher = {Springer}
 }
 ```
 
