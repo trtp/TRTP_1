@@ -3,8 +3,7 @@
 **Official Repository of Our Paper: “A Three-stage Vision-Language Robust Task Planning Framework with Spatial Prompts and Feedback Simulation
 ”**
 
-📄 [Paper (coming soon)]() | 🔗 [Project Page](https://trtp.github.io/)
-📌 Note: Paper link will be shared publicly after acceptance.
+📄 [Paper (coming soon)](https://link.springer.com/article/10.1007/s10489-026-07143-y) | 🔗 [Project Page](https://trtp.github.io/)
 ---
 
 ##  Overview
