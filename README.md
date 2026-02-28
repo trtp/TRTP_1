@@ -1,9 +1,8 @@
-#  A Three-stage Vision-Language Task Planning Framework with Spatial Prompts and Feedback Simulation
+#  TRTP: a three-stage robust task planning framework for open worlds via visual-language models and digital twin simulation
 
-**Official Repository of Our Paper: “A Three-stage Vision-Language Robust Task Planning Framework with Spatial Prompts and Feedback Simulation
-”**
+**Official Repository of Our Paper: “TRTP: a three-stage robust task planning framework for open worlds via visual-language models and digital twin simulation”**
 
-📄 [Paper (coming soon)](https://link.springer.com/article/10.1007/s10489-026-07143-y) | 🔗 [Project Page](https://trtp.github.io/)
+📄 [Paper](https://link.springer.com/article/10.1007/s10489-026-07143-y) | 🔗 [Project Page](https://trtp.github.io/)
 ---
 
 ##  Overview
